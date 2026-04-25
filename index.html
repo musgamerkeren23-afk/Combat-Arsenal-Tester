@@ -85,11 +85,11 @@ canvas{display:block;}
 .fv{color:#00ff88;}.fq{font-size:8px;color:#2a2a2a;}
 
 /* Settings button */
-#set-btn{position:absolute;top:14px;left:50%;transform:translateX(-50%);
-  font-size:9px;letter-spacing:3px;color:#333;text-transform:uppercase;
-  padding:5px 14px;border:1px solid #222;background:rgba(0,0,0,.4);
-  pointer-events:all;cursor:pointer;transition:all .25s;}
-#set-btn:hover{border-color:#ff4400;color:#ff4400;}
+#set-btn{position:fixed;top:14px;left:50%;transform:translateX(-50%);
+  font-size:9px;letter-spacing:3px;color:#666;text-transform:uppercase;
+  padding:7px 18px;border:1px solid #333;background:rgba(0,0,0,.7);
+  pointer-events:all;cursor:pointer;transition:all .25s;z-index:105;}
+#set-btn:hover,#set-btn:active{border-color:#ff4400;color:#ff4400;}
 
 #ctrl-h{position:absolute;top:50%;right:14px;transform:translateY(-50%);
   font-size:8px;color:#222;letter-spacing:2px;line-height:2.2;text-transform:uppercase;}
@@ -156,8 +156,8 @@ input:checked+.tog-tr::before{transform:translateX(20px);background:#fff;}
   background:rgba(255,68,0,.45);border:2px solid rgba(255,68,0,.75);border-radius:50%;
   transform:translate(-50%,-50%);box-shadow:0 0 12px rgba(255,68,0,.25);}
 
-/* Look zone — right 55% */
-#lz{position:absolute;top:0;right:0;width:55%;height:100%;pointer-events:all;}
+/* Look zone — right 55%, starts below settings btn */
+#lz{position:absolute;top:50px;right:0;width:55%;height:calc(100% - 50px);pointer-events:all;}
 
 /* ── RIGHT CLUSTER (landscape: right side) ── */
 /* FIRE — large, bottom-right */
@@ -218,12 +218,13 @@ input:checked+.tog-tr::before{transform:translateX(20px);background:#fff;}
   pointer-events:all;user-select:none;-webkit-user-select:none;}
 #b-slide:active{background:rgba(0,160,255,.4);}
 
-/* Settings button for mobile */
+/* Settings button mobile — above look zone */
 #b-settings{position:absolute;top:10px;left:50%;transform:translateX(-50%);
-  width:auto;padding:6px 14px;
-  background:rgba(0,0,0,.5);border:1px solid #222;border-radius:4px;
-  font-size:8px;letter-spacing:3px;color:#444;text-transform:uppercase;
-  pointer-events:all;user-select:none;-webkit-user-select:none;}
+  width:auto;padding:7px 16px;
+  background:rgba(0,0,0,.75);border:1px solid #333;border-radius:4px;
+  font-size:9px;letter-spacing:3px;color:#666;text-transform:uppercase;
+  pointer-events:all;user-select:none;-webkit-user-select:none;
+  z-index:130;}
 #b-settings:active{border-color:#ff4400;color:#ff4400;}
 
 /* mob labels */
@@ -238,6 +239,7 @@ body.mob #item-bar{bottom:6px;left:50%;transform:translateX(-50%);}
 body.mob #states{bottom:60px;left:16px;}
 body.mob #ctrl-h{display:none;}
 body.mob #set-btn{display:none;}
+body:not(.mob) #b-settings{display:none !important;}
 </style>
 </head>
 <body>
@@ -296,8 +298,6 @@ body.mob #set-btn{display:none;}
     <div class="fq" id="fpsq">Quality: Auto</div>
   </div>
 
-  <button id="set-btn" onclick="openSettings()">⚙ Settings</button>
-
   <div id="ctrl-h">
     <div><span class="hk">WASD</span> Move</div>
     <div><span class="hk">SHIFT</span> Sprint</div>
@@ -311,6 +311,9 @@ body.mob #set-btn{display:none;}
     <div><span class="hk">ESC / P</span> Settings</div>
   </div>
 </div>
+
+<!-- Settings button — outside HUD so pointer-events work -->
+<button id="set-btn" onclick="openSettings()">⚙ Settings</button>
 
 <!-- SETTINGS PANEL -->
 <div id="settings">
@@ -397,7 +400,7 @@ body.mob #set-btn{display:none;}
   <div id="b-slide">🏂<span class="ml">Slide</span></div>
 
   <!-- Settings -->
-  <div id="b-settings" ontouchstart="openSettings()">⚙ Settings</div>
+  <div id="b-settings">⚙ Settings</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -853,6 +856,11 @@ if(IS_MOBILE){
       PL.slideDir.set(-Math.sin(PL.yaw),0,-Math.cos(PL.yaw)).normalize();
     }
   });
+
+  // Mobile settings button
+  const bset=document.getElementById('b-settings');
+  bset.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();openSettings();},{passive:false});
+  bset.addEventListener('click',()=>openSettings());
 }
 
 // ═══════════════════════════════════════════════
@@ -1159,4 +1167,4 @@ window.addEventListener('resize',()=>{
 animate();
 </script>
 </body>
-  </html>
+</html>
