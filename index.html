@@ -2,292 +2,164 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Combat Arsenal v3</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Combat Arsenal</title>
+
 <style>
-body { margin:0; overflow:hidden; background:#000; font-family:Arial; }
-canvas { display:block; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;overflow:hidden;font-family:monospace;}
+canvas{display:block;}
 
 /* SETTINGS BUTTON */
-#btn-settings {
-  position:fixed; top:15px; right:15px;
-  background:#111; color:#fff;
-  padding:8px 12px; border-radius:6px;
-  cursor:pointer; z-index:999;
+#settings-btn{
+position:fixed;top:10px;right:10px;
+z-index:999;
+background:#111;border:1px solid #333;
+padding:8px 10px;cursor:pointer;color:#fff;
 }
 
 /* SETTINGS PANEL */
-#settings-panel {
-  position:fixed; inset:0;
-  background:rgba(0,0,0,0.9);
-  display:none; flex-direction:column;
-  align-items:center; justify-content:center;
-  color:#fff; z-index:1000;
+#settings-menu{
+position:fixed;top:0;right:-260px;
+width:260px;height:100%;
+background:#0a0a0a;color:#fff;
+z-index:999;
+transition:.3s;padding:20px;
 }
 
-.set-item { margin:15px; }
+/* MOBILE FIX BUTTON */
+#btn-jump{bottom:200px;left:170px;}
+#btn-slide{bottom:200px;left:238px;} /* FIX */
+#btn-crouch{bottom:110px;left:306px;} /* FIX */
 
-input[type=range] { width:200px; }
-
-/* MOBILE BUTTONS */
-.btn {
-  position:absolute;
-  width:60px; height:60px;
-  border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  background:rgba(255,255,255,0.1);
-  border:1px solid rgba(255,255,255,0.3);
-  pointer-events:all;
+/* Z-INDEX FIX */
+#look-zone{z-index:1;}
+#btn-fire,#btn-aim,#btn-reload,#btn-flash,
+#btn-jump,#btn-sprint,#btn-crouch,#btn-slide{
+z-index:2;
 }
 
-/* FIXED POSITIONS */
-#btn-jump { bottom:200px; left:160px; }
-#btn-slide { bottom:280px; left:160px; }
-#btn-fire { bottom:120px; right:40px; }
-
-#mobile-controls {
-  position:fixed; inset:0;
-  pointer-events:none;
-}
+/* FIRE FIX */
+#btn-fire{touch-action:manipulation;}
 </style>
 </head>
 
 <body>
 
-<div id="btn-settings">⚙️</div>
+<div id="settings-btn">⚙️</div>
 
-<div id="settings-panel">
-  <h2>SETTINGS</h2>
+<div id="settings-menu">
+<h3 style="color:#ff4400;">SETTINGS</h3>
 
-  <div class="set-item">
-    Sensitivity: <span id="sens-val">1.0</span><br>
-    <input type="range" id="sens-slider" min="0.2" max="3" step="0.1" value="1">
-  </div>
+<div>Camera Sensitivity</div>
+<input id="sens" type="range" min="0.0005" max="0.004" step="0.0001">
 
-  <div class="set-item">
-    FOV: <span id="fov-val">75</span><br>
-    <input type="range" id="fov-slider" min="50" max="100" value="75">
-  </div>
-
-  <div class="set-item">
-    Low Graphics <input type="checkbox" id="lowgfx">
-  </div>
-
-  <button onclick="closeSettings()">CLOSE</button>
-</div>
-
-<div id="mobile-controls">
-  <div id="btn-jump" class="btn">⬆️</div>
-  <div id="btn-slide" class="btn">💨</div>
-  <div id="btn-fire" class="btn">🔥</div>
+<div style="margin-top:20px">Graphics</div>
+<select id="gfx">
+<option value="low">Low</option>
+<option value="med">Medium</option>
+<option value="high">High</option>
+</select>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 <script>
-
-// ===== SETTINGS =====
-let sensitivity = 1;
-let fov = 75;
-
-function closeSettings(){
-  document.getElementById("settings-panel").style.display="none";
-}
-
-document.getElementById("btn-settings").onclick=()=>{
-  document.getElementById("settings-panel").style.display="flex";
-};
-
-// slider sens
-const sensSlider = document.getElementById("sens-slider");
-sensSlider.oninput=()=>{
-  sensitivity=parseFloat(sensSlider.value);
-  document.getElementById("sens-val").textContent=sensitivity;
-};
-
-// slider fov
-const fovSlider = document.getElementById("fov-slider");
-fovSlider.oninput=()=>{
-  fov=parseInt(fovSlider.value);
-  document.getElementById("fov-val").textContent=fov;
-};
-
-// low gfx
-document.getElementById("lowgfx").onchange=(e)=>{
-  if(e.target.checked){
-    renderer.setPixelRatio(0.6);
-    renderer.shadowMap.enabled=false;
-  }else{
-    renderer.setPixelRatio(1);
-    renderer.shadowMap.enabled=true;
-  }
-};
-
-// ===== THREE =====
+// ================= BASIC SCENE =================
 const scene = new THREE.Scene();
-scene.background=new THREE.Color(0x87ceeb);
+scene.background = new THREE.Color(0x7ab0c8);
 
-const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,1000);
-const renderer=new THREE.WebGLRenderer();
+const camera = new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,200);
+
+const renderer = new THREE.WebGLRenderer();
 renderer.setSize(innerWidth,innerHeight);
-renderer.setPixelRatio(1);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.2)); // FIX
 document.body.appendChild(renderer.domElement);
 
-// light
+// LIGHT
 scene.add(new THREE.AmbientLight(0xffffff,0.6));
-const sun=new THREE.DirectionalLight(0xffffff,1);
-sun.position.set(5,10,5);
-scene.add(sun);
 
-// ground
-const ground=new THREE.Mesh(
- new THREE.PlaneGeometry(100,100),
- new THREE.MeshStandardMaterial({color:0x228822})
+// GROUND
+const ground = new THREE.Mesh(
+ new THREE.PlaneGeometry(200,200),
+ new THREE.MeshBasicMaterial({color:0x3d5c28})
 );
 ground.rotation.x=-Math.PI/2;
 scene.add(ground);
 
-// walls
-const walls=[];
-function wall(x,z,w,h,d){
- let m=new THREE.Mesh(
-   new THREE.BoxGeometry(w,h,d),
-   new THREE.MeshStandardMaterial({color:0x777})
- );
- m.position.set(x,h/2,z);
- scene.add(m);
- walls.push(new THREE.Box3().setFromObject(m));
-}
-wall(0,-5,5,3,1);
-wall(3,0,1,3,5);
+// PLAYER
+let yaw=0,pitch=0;
+let sens = localStorage.getItem("sens") || 0.002;
 
-// player
-const player={
- pos:new THREE.Vector3(0,1.7,5),
- vel:new THREE.Vector3(),
- onGround:false,
- yaw:0
+// SETTINGS UI
+const btn = document.getElementById("settings-btn");
+const menu = document.getElementById("settings-menu");
+
+let open=false;
+btn.onclick=()=>{
+open=!open;
+menu.style.right=open?"0":"-260px";
 };
 
-// collision
-function collide(pos){
- let box=new THREE.Box3(
-  new THREE.Vector3(pos.x-0.3,pos.y-1.7,pos.z-0.3),
-  new THREE.Vector3(pos.x+0.3,pos.y,pos.z+0.3)
- );
- return walls.some(w=>box.intersectsBox(w));
+const sensSlider=document.getElementById("sens");
+sensSlider.value=sens;
+
+sensSlider.oninput=e=>{
+sens=parseFloat(e.target.value);
+localStorage.setItem("sens",sens);
+};
+
+// GRAPHICS
+const gfx=document.getElementById("gfx");
+gfx.value=localStorage.getItem("gfx")||"high";
+
+gfx.onchange=()=>{
+localStorage.setItem("gfx",gfx.value);
+
+if(gfx.value==="low"){
+renderer.setPixelRatio(0.6);
 }
-
-// input
-let keys={};
-addEventListener("keydown",e=>keys[e.code]=true);
-addEventListener("keyup",e=>keys[e.code]=false);
-
-let shooting=false;
-
-// mobile buttons fix
-function bind(id,down,up){
- let el=document.getElementById(id);
- let active=null;
-
- el.addEventListener("touchstart",e=>{
-   if(active!==null)return;
-   active=e.changedTouches[0].identifier;
-   down();
-   e.preventDefault();
- });
-
- el.addEventListener("touchend",e=>{
-   for(let t of e.changedTouches){
-     if(t.identifier===active){
-       active=null;
-       up&&up();
-     }
-   }
- });
+if(gfx.value==="med"){
+renderer.setPixelRatio(1);
 }
-
-bind("btn-fire",()=>shooting=true,()=>shooting=false);
-bind("btn-jump",()=>jump());
-bind("btn-slide",()=>slide());
-
-// actions
-function jump(){
- if(player.onGround){
-   player.vel.y=8;
-   player.onGround=false;
- }
+if(gfx.value==="high"){
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.2));
 }
+};
 
-function slide(){
- player.vel.x*=2;
- player.vel.z*=2;
-}
-
-// mouse look
-let mx=0,my=0;
+// MOUSE LOOK
+let mouseDX=0,mouseDY=0;
 addEventListener("mousemove",e=>{
- mx+=e.movementX;
- my+=e.movementY;
+mouseDX+=e.movementX;
+mouseDY+=e.movementY;
 });
 
-// ===== LOOP =====
-let last=performance.now();
+function update(){
+yaw -= mouseDX * sens;
+pitch -= mouseDY * sens;
+mouseDX=mouseDY=0;
 
-function update(dt){
+pitch=Math.max(-1.5,Math.min(1.5,pitch));
 
- // sensitivity applied
- let sens=0.002*sensitivity;
-
- player.yaw -= mx * sens;
- mx=0;
-
- camera.rotation.y=player.yaw;
-
- // move
- let speed=5;
- if(keys["KeyW"]) player.vel.z=-speed;
- if(keys["KeyS"]) player.vel.z=speed;
- if(keys["KeyA"]) player.vel.x=-speed;
- if(keys["KeyD"]) player.vel.x=speed;
-
- // gravity
- player.vel.y-=20*dt;
-
- // collision move
- let next=player.pos.clone();
- next.x+=player.vel.x*dt;
- if(!collide(next)) player.pos.x=next.x;
-
- next=player.pos.clone();
- next.z+=player.vel.z*dt;
- if(!collide(next)) player.pos.z=next.z;
-
- player.pos.y+=player.vel.y*dt;
-
- if(player.pos.y<1.7){
-   player.pos.y=1.7;
-   player.vel.y=0;
-   player.onGround=true;
- }
-
- camera.position.copy(player.pos);
-
- // apply FOV
- camera.fov += (fov - camera.fov)*0.1;
- camera.updateProjectionMatrix();
+camera.rotation.order="YXZ";
+camera.rotation.y=yaw;
+camera.rotation.x=pitch;
 }
 
+// LOOP
 function animate(){
- requestAnimationFrame(animate);
- let now=performance.now();
- let dt=(now-last)/1000;
- last=now;
-
- update(dt);
- renderer.render(scene,camera);
+requestAnimationFrame(animate);
+update();
+renderer.render(scene,camera);
 }
 animate();
 
+onresize=()=>{
+camera.aspect=innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(innerWidth,innerHeight);
+};
 </script>
+
 </body>
-  </html>
+</html>
