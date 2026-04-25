@@ -6,7 +6,7 @@
 <title>Combat Arsenal</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#000;overflow:hidden;font-family:'Courier New',monospace;touch-action:none;}
+body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
 canvas{display:block;}
 
 /* ─── LOADING ─────────────────────────────── */
@@ -84,12 +84,22 @@ canvas{display:block;}
 #fps-h{position:absolute;top:14px;left:14px;font-size:9px;color:#252525;letter-spacing:2px;}
 .fv{color:#00ff88;}.fq{font-size:8px;color:#2a2a2a;}
 
-/* Settings button */
-#set-btn{position:fixed;top:14px;left:50%;transform:translateX(-50%);
-  font-size:9px;letter-spacing:3px;color:#666;text-transform:uppercase;
-  padding:7px 18px;border:1px solid #333;background:rgba(0,0,0,.7);
-  pointer-events:all;cursor:pointer;transition:all .25s;z-index:105;}
-#set-btn:hover,#set-btn:active{border-color:#ff4400;color:#ff4400;}
+/* Settings button — z-index above everything except loading */
+#set-btn{position:fixed;top:12px;left:50%;transform:translateX(-50%);
+  font-size:9px;letter-spacing:3px;color:#777;text-transform:uppercase;
+  padding:8px 20px;border:1px solid #444;background:rgba(0,0,0,.85);
+  pointer-events:all;cursor:pointer;transition:all .25s;
+  z-index:8000;font-family:'Courier New',monospace;}
+#set-btn:hover,#set-btn:active{border-color:#ff4400;color:#ff4400;background:rgba(0,0,0,.95);}
+
+/* Mobile settings btn same z-index */
+#b-settings{position:fixed;top:12px;left:50%;transform:translateX(-50%);
+  width:auto;padding:8px 18px;
+  background:rgba(0,0,0,.85);border:1px solid #444;
+  font-size:9px;letter-spacing:3px;color:#777;text-transform:uppercase;
+  pointer-events:all;user-select:none;-webkit-user-select:none;
+  z-index:8000;font-family:'Courier New',monospace;}
+#b-settings:active{border-color:#ff4400;color:#ff4400;}
 
 #ctrl-h{position:absolute;top:50%;right:14px;transform:translateY(-50%);
   font-size:8px;color:#222;letter-spacing:2px;line-height:2.2;text-transform:uppercase;}
@@ -156,7 +166,7 @@ input:checked+.tog-tr::before{transform:translateX(20px);background:#fff;}
   background:rgba(255,68,0,.45);border:2px solid rgba(255,68,0,.75);border-radius:50%;
   transform:translate(-50%,-50%);box-shadow:0 0 12px rgba(255,68,0,.25);}
 
-/* Look zone — right 55%, starts below settings btn */
+/* Look zone — right 55% but skip top 50px (settings btn area) */
 #lz{position:absolute;top:50px;right:0;width:55%;height:calc(100% - 50px);pointer-events:all;}
 
 /* ── RIGHT CLUSTER (landscape: right side) ── */
@@ -429,6 +439,19 @@ const LT=setInterval(()=>{
 },80);
 
 // ═══════════════════════════════════════════════
+//  SETTINGS BUTTON LISTENERS
+// ═══════════════════════════════════════════════
+// Bind both PC and mobile settings buttons immediately
+['set-btn','b-settings'].forEach(function(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.onclick=null; // clear inline
+  el.addEventListener('click',function(e){e.stopPropagation();openSettings();});
+  el.addEventListener('touchend',function(e){e.preventDefault();e.stopPropagation();openSettings();});
+  el.addEventListener('touchstart',function(e){e.stopPropagation();},{passive:false});
+});
+
+// ═══════════════════════════════════════════════
 //  SETTINGS STATE
 // ═══════════════════════════════════════════════
 const CFG={
@@ -439,7 +462,6 @@ const CFG={
 const DEFAULTS={...CFG};
 
 function openSettings(){
-  // sync sliders to current cfg
   document.getElementById('s-sens').value=CFG.sens;
   document.getElementById('v-sens').textContent=CFG.sens.toFixed(1)+'x';
   document.getElementById('s-ads').value=CFG.adsMult;
@@ -448,7 +470,7 @@ function openSettings(){
   document.getElementById('v-fov').textContent=CFG.fov+'°';
   document.getElementById('s-invy').checked=CFG.invertY;
   document.getElementById('s-qual').value=CFG.quality;
-  document.getElementById('v-qual')=['Low','Med','High'][CFG.quality];
+  document.getElementById('v-qual').textContent=['Low','Med','High'][CFG.quality];
   document.getElementById('s-auto').checked=CFG.autoOpt;
   document.getElementById('s-shad').checked=CFG.shadows;
   document.getElementById('s-ch').value=CFG.chSize;
